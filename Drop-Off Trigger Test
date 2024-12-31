@@ -1,0 +1,43 @@
+@isTest
+public class DropOffTriggerTest {
+    @isTest
+    static void testDistanceAssignment() {
+        // Step 1: Create a test Venue record with a valid geolocation
+        Venue__c testVenue = new Venue__c(
+            Name = 'Test Venue',
+            Contact_Email__c = 'Abc@gmail.com',
+            Contact_Phone__c =  '6473829019'
+        );
+        insert testVenue;
+
+        // Set geolocation (Latitude and Longitude) for the Venue
+        testVenue.Location__Latitude__s = 37.7749; // Latitude for San Francisco
+        testVenue.Location__Longitude__s = -122.4194; // Longitude for San Francisco
+        update testVenue;
+
+        // Step 2: Create a Drop__c record with its own geolocation and link to the Venue
+        Drop__c testDrop = new Drop__c(
+            Name = 'Test Drop-Off Point',
+            State__c='Goa',
+            Venue__c = testVenue.Id // Lookup to the Venue
+        );
+
+        // Set geolocation (Latitude and Longitude) for the Drop
+        testDrop.Location_2__Latitude__s = 34.0522; // Latitude for Los Angeles
+        testDrop.Location_2__Longitude__s = -118.2437; // Longitude for Los Angeles
+
+        // Insert the Drop__c record to invoke the trigger
+        insert testDrop;
+
+        // Step 3: Query the inserted record to verify the Distance field
+        Drop__c result = [SELECT Distance__c, distance_calculation__c 
+                          FROM Drop__c 
+                          WHERE Id = :testDrop.Id];
+        System.debug('Distance Calculation Formula Field Value: ' + result.distance_calculation__c);
+        System.debug('Trigger Populated Distance Field Value: ' + result.Distance__c);
+
+        // Step 4: Assert that Distance__c matches the formula-calculated distance
+        System.assertEquals(result.distance_calculation__c, result.Distance__c,
+            'Distance field should match the calculated formula value');
+    }
+}
